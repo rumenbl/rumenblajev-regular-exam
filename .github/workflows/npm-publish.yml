@@ -1,0 +1,57 @@
+name: Build, Test and Deploy to Render
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  build-and-unit-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+      - name: Install Deps
+        run: npm install
+      - name: Run unit tests
+        run: npm run test:unit
+      - name: Show SoftUni username
+        run: echo "rumenblajev"
+
+  ui-test:
+    runs-on: ubuntu-latest
+    needs: build-and-unit-test
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+      - name: Install deps
+        run: npm install
+      - name: install Playwright deps
+        run: npx playwright install
+      - name: Start App
+        run: npm run start &
+      - name: Run UI tests
+        run: npm run test:ui
+
+  deploy-to-render:
+    runs-on: ubuntu-latest
+    needs: ui-test
+
+    steps:
+      - name: Deploy to Render
+        uses: JorgeLNJunior/render-deploy@v1.4.4
+        with:
+            service_id: ${{ secrets.RENDER_SID }}
+            api_key: ${{ secrets.RENDER_KEY }}
+            wait_deploy: true
